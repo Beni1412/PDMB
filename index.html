@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warung Nur Hikmah</title>
+
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,300;0,400;0,700;1,700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- feather icon -->
+    <script src="https://unpkg.com/feather-icons"></script>
+
+    <!-- my style -->
+    <link rel="stylesheet" href="css/style.css" />
+    <!-- app -->
+
+    <!-- alpine JS -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <script src="src/app.js" async></script>
+  </head>
+  <body>
+    <!-- navbar start -->
+    <nav class="navbar" x-data>
+      <a href="#" class="navbar-logo">Warung<span>NurHikmah</span>.</a>
+
+      <div class="navbar-nav">
+        <a href="#home">Home</a>
+        <a href="#about">Tentang kami</a>
+        <a href="#menu">Menu</a>
+        <a href="#contact">Kontak</a>
+      </div>
+
+      <div class="navbar-ekstra">
+        <a href="#" id="auth-button"><i data-feather="user"></i></a>
+        <a href="#" id="search-button"> <i data-feather="search"></i></a>
+        <a href="#" id="shopping-cart-button"
+          ><i data-feather="shopping-cart"></i
+          ><span
+            class="quantity-badge"
+            x-show="$store.cart.quantity"
+            x-text="$store.cart.quantity"
+          ></span
+        ></a>
+        <a href="#" id="hamburger-menu"> <i data-feather="menu"></i></a>
+      </div>
+<!-- login start -->
+
+
+    <!-- Auth Modal -->
+    <div class="auth-modal" id="auth-modal">
+      <!-- Login Section -->
+      <section id="login" class="login">
+        <h2>Login</h2>
+        <form id="loginForm">
+          <label for="username">Username:
+            <input type="text" id="username" name="username" required>
+          </label>
+          <label for="password">Password:
+            <input type="password" id="password" name="password" required>
+          </label>
+          <label for="role">Role:
+            <select id="role" name="role">
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+          </label>
+          <button type="submit">Login</button>
+        </form>
+        <button id="show-register">Daftar Baru</button>
+      </section>
+
+      <!-- Register Section (Hidden by default) -->
+      <section id="register" class="register" style="display:none;">
+        <h2>Register</h2>
+        <form id="registerForm">
+          <label for="reg-username">Username:
+            <input type="text" id="reg-username" name="username" required>
+          </label>
+          <label for="reg-password">Password:
+            <input type="password" id="reg-password" name="password" required>
+          </label>
+          <label for="reg-role">Role:
+            <select id="reg-role" name="role" disabled>
+              <option value="user">User</option>
+            </select>
+          </label>
+          <button type="submit">Register</button>
+        </form>
+      </section>
+    </div>
+
+    <div id="floating-chat">
+      <i class="chat-icon">💬</i>
+    </div>
+  
+    <!-- Chat Window -->
+    <div id="chat-window" class="hidden">
+      <div id="chat-header">
+        Chat with Admin
+        <button id="close-chat">X</button>
+      </div>
+      <div id="chat-content"></div>
+      <form id="chat-form">
+        <input type="text" id="chat-message" placeholder="Type a message">
+        <button type="submit">Send</button>
+      </form>
+    </div>
+  
+    <!-- Admin Chat Window -->
+    <div id="admin-chat-window" class="hidden">
+      <div id="chat-header">
+        Admin Chat System
+        <button id="close-admin-chat">X</button>
+      </div>
+      <div id="admin-chat-list"></div>
+      <div id="admin-chat-content" class="hidden"></div>
+      <form id="admin-chat-form" class="hidden">
+        <input type="text" id="admin-chat-message" placeholder="Type a message">
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <script src="src/app.js"></script>
+    <script>
+      feather.replace();
+    </script>
+
+    <script>
+      // Toggle auth modal (Login/Register) visibility
+      const authButton = document.getElementById('auth-button'); // Icon person
+      const authModal = document.getElementById('auth-modal'); // Modal login/register
+      const showRegisterButton = document.getElementById('show-register');
+      const registerSection = document.getElementById('register');
+      const loginSection = document.getElementById('login');
+
+      // Show the modal when "person" icon is clicked
+      authButton.addEventListener('click', (e) => {
+        e.preventDefault();
+
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (loggedInUser) {
+          const user = JSON.parse(loggedInUser);
+          // Replace the person icon with the user's name
+          authButton.innerHTML = `${user.username} <span>Logout</span>`;
+
+          // Set color based on role
+          if (user.role === 'admin') {
+            authButton.style.color = 'red'; // Admin name in red
+          } else {
+            authButton.style.color = 'white'; // User name in white
+          }
+
+          // Logout logic
+          authButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('loggedInUser');
+            window.location.reload(); // Refresh the page to go back to login
+          });
+        } else {
+          authModal.classList.toggle('active'); // Show modal if not logged in
+        }
+      });
+
+      // Show register form when "Daftar Baru" is clicked
+      showRegisterButton.addEventListener('click', () => {
+        loginSection.style.display = 'none';
+        registerSection.style.display = 'block';
+      });
+
+      // Close modal if clicked outside
+      window.addEventListener('click', (e) => {
+        if (!authModal.contains(e.target) && e.target !== authButton) {
+          authModal.classList.remove('active');
+        }
+      });
+
+      // Handle Register and Login logic with localStorage
+      const users = JSON.parse(localStorage.getItem('users')) || [];
+
+      // Handle Register logic
+      document.querySelector('#registerForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const username = document.querySelector('#reg-username').value.trim();
+        const password = document.querySelector('#reg-password').value.trim();
+        const role = document.querySelector('#reg-role').value;
+
+        if (users.some(user => user.username === username)) {
+          alert('Username already taken!');
+          return;
+        }
+
+        // Register the user
+        users.push({ username, password, role });
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Registration successful! Please login.');
+
+        // Clear and reset form
+        document.querySelector('#registerForm').reset();
+        loginSection.style.display = 'block';
+        registerSection.style.display = 'none';
+      });
+
+      // Handle Login logic
+      document.querySelector('#loginForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const username = document.querySelector('#username').value.trim();
+        const password = document.querySelector('#password').value.trim();
+        const role = document.querySelector('#role').value;
+
+        const user = users.find(u => u.username === username && u.password === password && u.role === role);
+
+        if (!user) {
+          alert('Invalid login details!');
+          return;
+        }
+
+        // Store logged-in user in localStorage
+        localStorage.setItem('loggedInUser', JSON.stringify(user));
+
+        alert('Login successful!');
+        // Refresh the page to update UI (show username and logout)
+        window.location.reload();
+      });
+    </script>
+
+    <!-- admin -->
+  
+
+<!-- login end -->
+      <!-- srach form start -->
+      <div class="search-form">
+        <input type="search" id="search-box" placeholder="search here..." />
+        <label for="search-box"><i data-feather="search"></i></label>
+      </div>
+
+      <!-- search form end -->
+
+      <!-- shopping cart start -->
+      <!-- Shopping cart start -->
+      <div class="shopping-cart">
+        <template x-for="(item, index) in $store.cart.items" :key="index">
+          <div class="cart-item">
+            <img :src="`jpg/${item.img}`" :alt="item.name" />
+            <div class="item-detail">
+              <h3 x-text="item.name"></h3>
+              <div class="item-price">
+                <span x-text="item.price"></span> &times;
+                <button id="remove" @click="$store.cart.remove(item.id)">
+                  &minus;
+                </button>
+                <span x-text="item.quantity"></span>
+                <button id="add" @click="$store.cart.add(item)">&plus;</button>
+                &equals;
+                <span x-text="item.total"></span>
+              </div>
+            </div>
+          </div>
+        </template>
+        <h4 x-show="!$store.cart.items.length" style="margin-top: 1rem">
+          Cart is Empty
+        </h4>
+        <h4 x-show="$store.cart.items.length > 0">
+          Total: <span x-text="rupiah($store.cart.total)"></span>
+        </h4>
+      
+        <div class="form-container" x-show="$store.cart.items.length">
+          <form action="" id="checkoutForm">
+            <input type="hidden" name="items" x-model="JSON.stringify($store.cart.items)" />
+            <input type="hidden" name="total" x-model="$store.cart.total" />
+            <h5>Customer Detail</h5>
+            <label for="name">
+              <span>Name</span>
+              <input type="text" name="name" id="name" required />
+            </label>
+            <label for="email">
+              <span>Email</span>
+              <input type="email" name="email" id="email" required />
+            </label>
+            <label for="phone">
+              <span>Phone</span>
+              <input type="number" name="phone" id="phone" autocomplete="off" required />
+            </label>
+            <button
+              class="checkout-button disabled"
+              type="submit"
+              id="checkout-button"
+              value="checkout"
+              disabled
+            >
+              Checkout
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Chat interface for Admin -->
+<div id="admin-chat-window" class="hidden">
+  <h3>Admin Chat</h3>
+  <div id="admin-chat-list"></div>
+  <div id="admin-chat-content" class="hidden"></div>
+  <form id="admin-chat-form" class="hidden">
+    <input
+      type="text"
+      id="admin-chat-message"
+      placeholder="Enter your message"
+      required
+    />
+    <button type="submit">Send</button>
+  </form>
+  <button id="close-admin-chat">Close</button>
+</div>
+
+
+
+      <!-- Shopping cart end -->
+    </nav>
+
+    <!-- navbar end -->
+    <!-- hero section start -->
+    <section class="hero" id="home">
+      <main class="content">
+        <h1>Mari <span>Makan</span> Mas</h1>
+        <p>
+          Mari Makan di Warung Kami, Murah & Berkualitas!!!
+        </p>
+        <a href="#menu" class="cta">Beli Sekarang</a>
+      </main>
+    </section>
+    <!-- hero section end -->
+    <!-- about section start -->
+    <section id="about" class="about">
+      <h2><span>Tentang </span>Kami</h2>
+
+      <div class="row">
+        <div class="about-img">
+          <img src="jpg/tentang-kami.png" alt="Tentang Kami" align="right" />
+        </div>
+        <div class="content">
+          <br /><br />
+          <br />
+          <h3>Kenapa Makan Di Sini?</h3>
+          <p>
+            Kenapa makan di sini? Ya, di warteg kami ini enak banget, murah meriah, sama porsinya gak pelit. Mau makan apa aja ada, dari sayur, lauk, sampe sambel yang bikin nagih. Kalo kalian mau makan kenyang tapi gak habis modal, ya ke sini aja. Pelayanannya ramah, makanannya seger, dan dijamin bikin kenyang sampai mata keriting!
+
+          </p>
+          <br>
+          <p>
+            Gak percaya? Cobain aja sendiri!. Mulai dari ayam goreng kriuk-kriuk, tempe mendoan renyah, sampe sayur lodeh yang bikin nagih. Mau makan di tempat atau bungkus, semuanya bisa. Pokoknya di warteg kami ini, kalian bakal nemu kepuasan makan yang bikin senyum-senyum sendiri, tanpa bikin kantong jebol. Datang aja langsung, dijamin balik lagi!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- about section end -->
+    <!-- menusection start -->
+    <section id="menu" class="menu" x-data="menu">
+      <h2><span>Menu </span>Kami</h2>
+      <p>
+        BERIKUT ADALAH MENU-MENU KAMI SILAHKAN DIPILIH ^_^
+      </p>
+      <!-- menu start -->
+      <div class="row">
+        <template x-for="(item, index) in items" :key="index">
+          <div class="menu-card">
+            <img
+              :src="`jpg/${item.img}`"
+              :alt="item.name"
+              class="menu-card-img"
+            />
+            <h3 class="menu-card-title" x-text="item.name"></h3>
+            <p class="menu-card-price" x-text="`IDR ${item.price}`"></p>
+            <a href="#" @click.prevent="$store.cart.add(item)">
+              <svg
+                width="24"
+                height="24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <use href="jpg/feather-sprite.svg#shopping-cart" />
+                <path d="M6 2h15l-1.5 9H7.5L6 2zm0 0h3m3 0h5" />
+                <circle cx="10" cy="22" r="1" />
+                <circle cx="17" cy="22" r="1" />
+              </svg>
+            </a>
+          </div>
+        </template>
+      </div>
+      <!-- menu end -->
+    </section>
+
+    <!-- menu section end -->
+
+    <!-- contact section start -->
+    <section id="contact" class="contact">
+      <h2><span>Kontak </span>Kami</h2>
+      <p>
+        BERIKUT ADALAH KONTAK KAMI, SILAHKAN HUBUNGI KAMI JIKA PERLU BANTUAN ^_^.
+      </p>
+
+      <div class="row">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d246.9756093754215!2d112.67431676387787!3d-7.935762465257799!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2dd629739eeb664f%3A0x2251d90d12d6dae0!2sWarung%20Nur%20Hikmah!5e0!3m2!1sen!2sid!4v1727868830869!5m2!1sen!2sid"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          class="map"
+        ></iframe>
+
+        <!-- Form Kontak -->
+        <form id="contactForm" >
+          <div class="input-group">
+            <i data-feather="user"></i>
+            <input type="text" placeholder="Nama" name="name" id="name" />
+          </div>
+          <div class="input-group">
+            <i data-feather="mail"></i>
+            <input type="email" placeholder="Email" name="email" id="email" />
+          </div>
+          <div class="input-group">
+            <i data-feather="phone"></i>
+            <input type="text" placeholder="NO HP" name="phone" id="phone" />
+          </div>
+          <div class="input-group">
+            <i data-feather="message-circle"></i>
+            <textarea placeholder="Pesan" rows="4" name="message" id="message"></textarea>
+          </div>
+          <button type="submit" class="btn">Kirim Pesan</button>
+          
+    </section>
+
+    <!-- contact section end -->
+
+    <!-- footer start -->
+    <footer>
+      <div class="socials">
+        <a href="https://www.instagram.com/"
+          ><i data-feather="instagram"></i
+        ></a>
+        <a href="#"><i data-feather="message-circle"></i></a>
+        <a href="https://id-id.facebook.com/"
+          ><i data-feather="facebook"></i
+        ></a>
+      </div>
+
+      <div class="links">
+        <a href="#home">Home</a>
+        <a href="#about">Tentang Kami</a>
+        <a href="#menu">Menu</a>
+        <a href="#contact">Kontak</a>
+      </div>
+      <div class="credit">
+        <p>
+          Created by
+          <a
+            href="https://www.instagram.com/invites/contact/?igsh=10rijogafcqou&utm_content=32thrrt"
+            >BeNi</a
+          >. | &copy; 2024.
+        </p>
+      </div>
+      <div id="chat-icon">
+        <i class="chat-icon">💬</i>
+      </div>
+
+      
+    </footer>
+
+    <!-- footer end -->
+
+    <!-- feather icon -->
+    <script>
+      feather.replace();
+    </script>
+
+    <!-- java scrpt -->
+    <script src="js/script.js"></script>
+  </body>
+</html>
